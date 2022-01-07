@@ -362,23 +362,15 @@ func main() {
 	}
 	defer session.Close()
 
-	{
-		log.Println("Creating commands...")
-		wg := sync.WaitGroup{}
-		for i, cmd := range commands {
-			wg.Add(1)
-			go func(i int, cmd *discordgo.ApplicationCommand) {
-				defer wg.Done()
-				ccmd, err := session.ApplicationCommandCreate(session.State.User.ID, *GID, cmd)
-				if err != nil {
-					log.Panicf("Cannot create '%v' command: %v", cmd.Name, err)
-				}
-				*commands[i] = *ccmd
-			}(i, cmd)
-		}
-		wg.Wait()
-		log.Println("Successfully created commands")
+	log.Println("Creating commands...")
+	ccmds, err := session.ApplicationCommandBulkOverwrite(session.State.User.ID, *GID, commands)
+	if err != nil {
+		log.Panicln("Failed to create commands")
 	}
+	for i, ccmd := range ccmds {
+		*commands[i] = *ccmd
+	}
+	log.Println("Successfully created commands")
 	defer func() {
 		log.Println("Deleting commands...")
 		wg := sync.WaitGroup{}
